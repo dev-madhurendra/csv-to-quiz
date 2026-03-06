@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CheckCircle, XCircle, ChevronRight, ChevronLeft, RotateCcw, Info } from 'lucide-react';
 import { Quiz, QuizState, QuizAttempt } from '../types';
-import { storage } from '../utils';
+import { getCorrectAnswerIndex, storage } from '../utils';
 
 interface QuizPlayerProps {
   quiz: Quiz;
@@ -20,8 +20,11 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
   const currentQuestion = quiz.questions[state.currentQuestionIndex];
   const currentAnswer = state.answers[state.currentQuestionIndex];
   const isAnswered = currentAnswer !== null;
-  const isCorrect = currentAnswer === currentQuestion.correctAnswer;
-
+  const currentQuestionOptions = currentQuestion.options;
+  const selectedAnswerIndex = currentQuestionOptions.findIndex(
+    (optionValue) => optionValue === currentAnswer
+  );
+  const isCorrect = getCorrectAnswerIndex(selectedAnswerIndex) == currentQuestion.correctAnswer; 
   const handleAnswer = (answer: string) => {
     const newAnswers = [...state.answers];
     newAnswers[state.currentQuestionIndex] = answer;
@@ -132,7 +135,7 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
         <div className="options">
           {currentQuestion.options.map((option, index) => {
             const isSelected = currentAnswer === option;
-            const isCorrectOption = option === currentQuestion.correctAnswer;
+            const isCorrectOption = option === currentAnswer;
             const showCorrectness = state.showExplanation;
 
             let optionClass = 'option';
@@ -149,7 +152,7 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
               >
                 <span className="option-label">{String.fromCharCode(65 + index)}</span>
                 <span className="option-text">{option}</span>
-                {showCorrectness && isCorrectOption && <CheckCircle size={20} />}
+                {showCorrectness && isCorrectOption && isCorrect && <CheckCircle size={20} />}
                 {showCorrectness && isSelected && !isCorrect && <XCircle size={20} />}
               </button>
             );
