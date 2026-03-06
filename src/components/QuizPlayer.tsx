@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { CheckCircle, XCircle, ChevronRight, ChevronLeft, RotateCcw, Info } from 'lucide-react';
 import { Quiz, QuizState, QuizAttempt } from '../types';
 import { storage } from '../utils';
