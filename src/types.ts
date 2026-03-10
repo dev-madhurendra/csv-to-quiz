@@ -24,6 +24,13 @@ export interface QuizAttempt {
 export interface QuizState {
   currentQuestionIndex: number;
   answers: (string | null)[];
+  answersIndex: (number | null)[];
   showExplanation: boolean;
   isCompleted: boolean;
+}
+
+export interface QuizPlayerProps {
+  quiz: Quiz;
+  onComplete: () => void;
+  onExit: () => void;
 }

@@ -192,13 +192,13 @@ export const generateQuizId = (): string => {
   return `quiz_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-export const getCorrectAnswerIndex = (key: number): string => {
+export const getCorrectAnswerIndex = (key: number | null): string => {
+  if (key === null || key === undefined) return ""; 
   const map = new Map<number, string>([
     [0, "A"],
     [1, "B"],
     [2, "C"],
     [3, "D"]
   ]);
-
   return map.get(key) ?? "";
 };

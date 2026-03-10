@@ -1,42 +1,42 @@
 import React, { useState } from 'react';
 import { CheckCircle, XCircle, ChevronRight, ChevronLeft, RotateCcw, Info } from 'lucide-react';
-import { Quiz, QuizState, QuizAttempt } from '../types';
+import { QuizState, QuizAttempt, QuizPlayerProps } from '../types';
 import { getCorrectAnswerIndex, storage } from '../utils';
-
-interface QuizPlayerProps {
-  quiz: Quiz;
-  onComplete: () => void;
-  onExit: () => void;
-}
 
 export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit }) => {
   const [state, setState] = useState<QuizState>({
     currentQuestionIndex: 0,
     answers: Array(quiz.questions.length).fill(null),
+    answersIndex: Array(quiz.questions.length).fill(null), 
     showExplanation: false,
     isCompleted: false
   });
 
   const currentQuestion = quiz.questions[state.currentQuestionIndex];
   const currentAnswer = state.answers[state.currentQuestionIndex];
+  const currentAnswerIndex = state.answersIndex[state.currentQuestionIndex];
   const isAnswered = currentAnswer !== null;
-  const currentQuestionOptions = currentQuestion.options;
-  const selectedAnswerIndex = currentQuestionOptions.findIndex(
-    (optionValue) => optionValue === currentAnswer
-  );
-  const isCorrect = getCorrectAnswerIndex(selectedAnswerIndex) == currentQuestion.correctAnswer; 
-  const handleAnswer = (answer: string) => {
+
+  const isCorrect =
+    currentAnswerIndex !== null &&
+    getCorrectAnswerIndex(currentAnswerIndex) === currentQuestion.correctAnswer;
+
+  const handleAnswer = (answer: string, answerIndex: number) => {
+    if (isAnswered) return; 
     const newAnswers = [...state.answers];
+    const newAnswersIndex = [...state.answersIndex]; 
+    newAnswersIndex[state.currentQuestionIndex] = answerIndex;
     newAnswers[state.currentQuestionIndex] = answer;
-    setState({ ...state, answers: newAnswers, showExplanation: true });
+    setState({ ...state, answers: newAnswers, answersIndex: newAnswersIndex, showExplanation: true });
   };
 
   const handleNext = () => {
     if (state.currentQuestionIndex < quiz.questions.length - 1) {
+      const nextIndex = state.currentQuestionIndex + 1;
       setState({
         ...state,
-        currentQuestionIndex: state.currentQuestionIndex + 1,
-        showExplanation: false
+        currentQuestionIndex: nextIndex,
+        showExplanation: state.answers[nextIndex] !== null
       });
     } else {
       completeQuiz();
@@ -45,17 +45,20 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
 
   const handlePrevious = () => {
     if (state.currentQuestionIndex > 0) {
+      const prevIndex = state.currentQuestionIndex - 1;
       setState({
         ...state,
-        currentQuestionIndex: state.currentQuestionIndex - 1,
-        showExplanation: state.answers[state.currentQuestionIndex - 1] !== null
+        currentQuestionIndex: prevIndex,
+        showExplanation: state.answers[prevIndex] !== null
       });
     }
   };
 
   const completeQuiz = () => {
-    const score = state.answers.filter(
-      (answer, index) => answer === quiz.questions[index].correctAnswer
+    const score = state.answersIndex.filter(
+      (answerIndex, index) =>
+        answerIndex !== null &&
+        getCorrectAnswerIndex(answerIndex) === quiz.questions[index].correctAnswer
     ).length;
 
     const attempt: QuizAttempt = {
@@ -75,14 +78,17 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
     setState({
       currentQuestionIndex: 0,
       answers: Array(quiz.questions.length).fill(null),
+      answersIndex: Array(quiz.questions.length).fill(null), 
       showExplanation: false,
       isCompleted: false
     });
   };
 
   if (state.isCompleted) {
-    const score = state.answers.filter(
-      (answer, index) => answer === quiz.questions[index].correctAnswer
+    const score = state.answersIndex.filter(
+      (answerIndex, index) =>
+        answerIndex !== null &&
+        getCorrectAnswerIndex(answerIndex) === quiz.questions[index].correctAnswer
     ).length;
     const percentage = Math.round((score / quiz.questions.length) * 100);
 
@@ -97,7 +103,6 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
             {score} out of {quiz.questions.length} correct
           </p>
         </div>
-
         <div className="complete-actions">
           <button onClick={handleRestart} className="btn-secondary">
             <RotateCcw size={20} />
@@ -119,8 +124,8 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
       </div>
 
       <div className="progress-bar">
-        <div 
-          className="progress-fill" 
+        <div
+          className="progress-fill"
           style={{ width: `${((state.currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }}
         />
       </div>
@@ -135,7 +140,8 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
         <div className="options">
           {currentQuestion.options.map((option, index) => {
             const isSelected = currentAnswer === option;
-            const isCorrectOption = option === currentAnswer;
+            const correctOptionIndex = ['A','B','C','D'].indexOf(currentQuestion.correctAnswer);
+            const isCorrectOption = index === correctOptionIndex;
             const showCorrectness = state.showExplanation;
 
             let optionClass = 'option';
@@ -147,13 +153,14 @@ export const QuizPlayer: React.FC<QuizPlayerProps> = ({ quiz, onComplete, onExit
               <button
                 key={index}
                 className={optionClass}
-                onClick={() => !isAnswered && handleAnswer(option)}
+                onClick={() => handleAnswer(option, index)}
                 disabled={isAnswered}
               >
                 <span className="option-label">{String.fromCharCode(65 + index)}</span>
                 <span className="option-text">{option}</span>
-                {showCorrectness && isCorrectOption && isCorrect && <CheckCircle size={20} />}
+                {showCorrectness && isCorrectOption && isSelected && <CheckCircle size={20} />}
                 {showCorrectness && isSelected && !isCorrect && <XCircle size={20} />}
+                {showCorrectness && isCorrectOption && !isSelected && !isCorrect && <CheckCircle size={20} className="hint-correct" />}
               </button>
             );
           })}

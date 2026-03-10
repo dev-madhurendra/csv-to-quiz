@@ -41,7 +41,7 @@ function App() {
     <div className="app">
       <nav className="sidebar">
         <div className="logo">
-          <BookOpen size={32} strokeWidth={1.5} />
+          <BookOpen size={25} strokeWidth={1.5} />
           <h1>QuizMaster</h1>
         </div>
 
